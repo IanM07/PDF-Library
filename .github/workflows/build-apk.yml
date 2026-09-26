@@ -1,0 +1,49 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Extract Android project
+        run: |
+          rm -rf PDFBookmarkReader
+          unzip -o PDFBookmarkReader-updated-source.zip
+
+          echo "Project contents:"
+          find PDFBookmarkReader -maxdepth 3 -type f | sort
+
+      - name: Build APK
+        working-directory: PDFBookmarkReader
+        run: gradle assembleDebug
+
+      - name: Show generated APK
+        run: |
+          find PDFBookmarkReader -type f -name "*.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Library-APK
+          path: PDFBookmarkReader/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
